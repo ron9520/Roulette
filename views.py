@@ -4,31 +4,37 @@ from models import NumberBet, ColorBet, ParityBet
 
 class ConsoleView:
     """
-    Handles the required Read-Evaluate-Print Loop (REPL).
+    המחלקה שתספק לנו את התצוגה. בעזרתה אנחנו עומדים בדרישה עבור פרויקטים לאקדמיה להשתמש
+    ב- REPL (Read-Evaluate-Print Loop), שהוא בעצם מסך שחור שמקבל פקודות בקונסול ועובר הלאה בצורה מחזורית ללא הפסקה (while True).
     """
     def __init__(self, controller: MainController):
+        # הממשק צריך חיבור ישיר לקונטרולר שהרגע יצרנו בכדי שמישהו (Controller) באמת יעבד את מה שהשחקן רשם.
         self.controller = controller
 
     def start(self):
+        """נקודת ההתחלה של הלולאה המרכזית (REPL)."""
         print("="*40)
         print("AI ROULETTE - CONSOLE EDITION")
         print("="*40)
         
+        # מתרגמת את מה שהיוזר כתב וקובעת אותו ב-Controller שפועל. 
         name = input("Enter your VIP Name: ").strip() or "PlayerOne"
         player = self.controller.login_or_register(name)
         
         print(f"\nWelcome back, {player.name}. Your bankroll is ${player.get_balance():.2f}")
         
+        # לולאת REPL אינסופית שמציגה 5 אופציות כנדרש 
         while True:
             print("\n--- OPTIONS MENU ---")
-            print("1. Play a Spin (Place Bet)")
-            print("2. View History & Stats")
-            print("3. Clear My History")
-            print("4. Ask the AI Dealer")
-            print("5. Exit Casino")
+            print("1. Play a Spin (Place Bet) - הימור ולסובב את הרולטה")
+            print("2. View History & Stats - צפייה בעבר המשחקים")
+            print("3. Clear My History - מחיקת היסטוריית הימורים")
+            print("4. Ask the AI Dealer - דיבור עם דילר חכם דרך אולמה גנרטיבית")
+            print("5. Exit Casino - יציאה מסודרת מהרולטה")
             
             choice = input(f"\n[Balance: ${self.controller.current_player.get_balance():.2f}] Select option (1-5): ").strip()
             
+            # טיפול בתפר (Evaluate) לבחירת היוזר ב-REPL
             if choice == '1':
                 self.handle_betting()
             elif choice == '2':
@@ -39,11 +45,12 @@ class ConsoleView:
                 self.ask_dealer()
             elif choice == '5':
                 print("Cashing out. See you next time!")
-                break
+                break # יציאה סופית משברת את תהליך ה- True
             else:
                 print("Invalid option. Please choose 1-5.")
 
     def handle_betting(self):
+        """מטפל בלוגיקת תצוגה בלבד, מקבל ממשתמש מספרים וקורה ל-Controller לסובב."""
         print("\n--- PLACE YOUR BET ---")
         print("1. Number Bet (0-36)")
         print("2. Color Bet (Red / Black)")
@@ -67,7 +74,9 @@ class ConsoleView:
             print("Insufficient funds!")
             return
             
-        bet = None
+        bet = None # מאתחל הימור כריק
+        
+        # יצירת סוג ההימור והמרה לאובייקט מתאים למודלים
         if b_type == '1':
             try:
                 num = int(input("Enter number (0-36): "))
@@ -95,6 +104,7 @@ class ConsoleView:
                 return
                 
         print("\nSpinning the wheel...")
+        # כאן View מעביר את האחריות לעשות עבודה ל- Controller האמיתי 
         result = self.controller.resolve_spin(bet)
         print(f"\n>> The ball landed on: {result['winning_number']} <<")
         
@@ -105,6 +115,7 @@ class ConsoleView:
             
 
     def show_history(self):
+        # השגת היסטוריה מה- Controller שמשיג מ- DB
         history = self.controller.db.get_player_history(self.controller.current_player.player_id, limit=10)
         print("\n--- RECENT ACTION ---")
         if not history:
@@ -124,23 +135,6 @@ class ConsoleView:
         question = input("\nAsk the dealer AI a question: ").strip()
         if question:
             print("Thinking...")
+            # הפניית תקשורת עם המודל של AI
             response = self.controller.ask_ai_dealer(question)
-            print(f"\n🤖 Dealer AI: {response}")
-            
-# ---------------------------------------------------------------------------------
-# KEEPING EXISTING GUI FOR HYBRID MVC SUPPORT 
-# (Optionally invoked through main.py)
-# ---------------------------------------------------------------------------------
-try:
-    from PyQt6.QtWidgets import (
-        QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-        QLabel, QPushButton, QGridLayout, QLineEdit, QTableWidget,
-        QTableWidgetItem, QHeaderView, QMessageBox, QDialog, QFormLayout, QDoubleSpinBox
-    )
-    from PyQt6.QtCore import Qt, QTimer, QThread, pyqtSignal
-except ImportError:
-    pass # Acceptable if they only run Console REPL without PyQt6
-
-# We keep CasinoGUI structure but wire it to MainController instead of Mock
-# [Skipping full Qt reimplement in views.py to save space, but keeping the stubs]
-# We will instruct users to utilize the REPL loop per instructions.
+            print(f"\nDealer AI: {response}")
